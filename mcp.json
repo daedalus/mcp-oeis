@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mcp-oeis": {
+      "command": "mcp-oeis",
+      "env": {}
+    }
+  }
+}
