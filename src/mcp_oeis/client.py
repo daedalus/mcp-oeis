@@ -115,10 +115,16 @@ class OEISClient:
                     name_content = name_content[len(target_id) :].strip()
                 data["name"] = name_content
             elif code == "%S":
+                if content.startswith(target_id):
+                    content = content[len(target_id) :].strip()
                 terms_lines.append(content)
             elif code == "%T":
+                if content.startswith(target_id):
+                    content = content[len(target_id) :].strip()
                 terms_lines.append(content)
             elif code == "%U":
+                if content.startswith(target_id):
+                    content = content[len(target_id) :].strip()
                 terms_lines.append(content)
             elif code == "%C":
                 data["comments"] += content + "\n"
@@ -162,18 +168,52 @@ class OEISClient:
             return []
 
         results: list[SearchResult] = []
+        current_entry_lines: list[str] = []
+        current_id = None
+
         for line in lines:
             if not line or line.startswith("#"):
                 continue
             if "Showing 0-" in line:
                 continue
 
-            id_match = re.match(r"^(\w)\s*(\w)(\d+)\s*(.+)$", line)
-            if id_match:
-                seq_num = id_match.group(3)
-                seq_id = f"A{seq_num}"
-                seq_name = id_match.group(4).strip()
-                results.append(SearchResult(id=seq_id, name=seq_name, terms=""))
+            if line.startswith("%I "):
+                if current_entry_lines and current_id:
+                    try:
+                        seq_data = self._parse_sequence_response(
+                            "\n".join(current_entry_lines), current_id
+                        )
+                        results.append(
+                            SearchResult(
+                                id=seq_data.id,
+                                name=seq_data.name,
+                                terms=",".join(str(t) for t in seq_data.terms[:10]),
+                            )
+                        )
+                    except ValueError:
+                        pass
+                current_entry_lines = [line]
+                id_match = re.match(r"^%I\s+(A\d+)", line)
+                if id_match:
+                    current_id = id_match.group(1)
+            else:
+                if current_entry_lines:
+                    current_entry_lines.append(line)
+
+        if current_entry_lines and current_id:
+            try:
+                seq_data = self._parse_sequence_response(
+                    "\n".join(current_entry_lines), current_id
+                )
+                results.append(
+                    SearchResult(
+                        id=seq_data.id,
+                        name=seq_data.name,
+                        terms=",".join(str(t) for t in seq_data.terms[:10]),
+                    )
+                )
+            except ValueError:
+                pass
 
         return results
 

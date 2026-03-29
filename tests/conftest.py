@@ -33,7 +33,11 @@ Showing 1-1 of 1
 def sample_search_results() -> str:
     return """# Greetings from The On-Line Encyclopedia of Integer Sequences! http://oeis.org/
 Search: Fibonacci
-Showing 1-3 of 3
-A   A000045   Fibonacci numbers: 0, 1, 1, 2, 3, 5, 8, 13, 21, ...
-A   A001353  Fibonacci numbers: 0, 1, 1, 2, 3, 5, 8, 13, 21, ...
+Showing 1-2 of 2
+%I A000045 M0692 N0256
+%S A000045 0,1,1,2,3,5,8,13,21,34
+%N A000045 Fibonacci numbers: F(n) = F(n-1) + F(n-2) with F(0) = 0 and F(1) = 1.
+%I A001353 M0780 N0299
+%S A001353 0,1,3,8,21,55,144
+%N A001353 F(2n) = bisection of Fibonacci sequence: a(n) = 3*a(n-1) - a(n-2).
 """
