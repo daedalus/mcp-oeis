@@ -60,10 +60,14 @@ class TestOEISClient:
         mock_client_class.return_value = mock_client
 
         client = OEISClient()
-        result = client.search_by_terms([0, 1, 1, 2, 3, 5])
+        result = client.search_by_terms([0, 1, 1, 2, 3, 5], max_results=1)
 
-        assert len(result) >= 1
+        assert len(result) == 1
         assert result[0].id == "A000045"
+        mock_client.get.assert_called_once_with(
+            "https://oeis.org/search",
+            params={"fmt": "text", "q": "0,1,1,2,3,5", "n": "1"},
+        )
         client.close()
 
     @patch("mcp_oeis.client.httpx.Client")
@@ -81,10 +85,14 @@ class TestOEISClient:
         mock_client_class.return_value = mock_client
 
         client = OEISClient()
-        result = client.search_by_name("Fibonacci")
+        result = client.search_by_name("Fibonacci", max_results=1)
 
-        assert len(result) >= 1
+        assert len(result) == 1
         assert result[0].id == "A000045"
+        mock_client.get.assert_called_once_with(
+            "https://oeis.org/search",
+            params={"fmt": "text", "q": "Fibonacci", "n": "1"},
+        )
         client.close()
 
     def test_search_by_name_empty_query(self) -> None:
@@ -97,6 +105,21 @@ class TestOEISClient:
         client = OEISClient()
         with pytest.raises(ValueError, match="Search terms cannot be empty"):
             client.search_by_terms([])
+        client.close()
+
+    @pytest.mark.parametrize(
+        ("method", "query"),
+        [
+            ("search_by_name", "Fibonacci"),
+            ("search_by_terms", [0, 1, 1, 2, 3, 5]),
+        ],
+    )
+    def test_search_max_results_must_be_positive(
+        self, method: str, query: str | list[int]
+    ) -> None:
+        client = OEISClient()
+        with pytest.raises(ValueError, match="max_results must be positive"):
+            getattr(client, method)(query, max_results=0)
         client.close()
 
     @patch("mcp_oeis.client.httpx.Client")
