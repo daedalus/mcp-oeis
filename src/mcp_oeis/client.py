@@ -108,23 +108,14 @@ class OEISClient:
                 continue
             code = line[:2]
             content = line[2:].strip()
+            # Every line of the text format is "%X Annnnnn data"; drop the
+            # A-number so that it never reaches the parsed fields.
+            if content.startswith(target_id):
+                content = content[len(target_id) :].strip()
 
             if code == "%N":
-                name_content = content
-                if name_content.startswith(target_id):
-                    name_content = name_content[len(target_id) :].strip()
-                data["name"] = name_content
-            elif code == "%S":
-                if content.startswith(target_id):
-                    content = content[len(target_id) :].strip()
-                terms_lines.append(content)
-            elif code == "%T":
-                if content.startswith(target_id):
-                    content = content[len(target_id) :].strip()
-                terms_lines.append(content)
-            elif code == "%U":
-                if content.startswith(target_id):
-                    content = content[len(target_id) :].strip()
+                data["name"] = content
+            elif code in ("%S", "%T", "%U"):
                 terms_lines.append(content)
             elif code == "%C":
                 data["comments"] += content + "\n"

@@ -137,6 +137,48 @@ class TestOEISClient:
         assert 0 in result.terms
         client.close()
 
+    @patch("mcp_oeis.client.httpx.Client")
+    def test_offset_is_read_from_the_o_line(self, mock_client_class: MagicMock) -> None:
+        # Real %O lines carry the A-number and the offset pair "offset,position".
+        response_text = """%I A262402 #53 Jun 13 2020 16:12:44
+%S A262402 0,18,76,200,412,738
+%N A262402 a(n) = number of triangles that can be formed from the points of a 3 X n grid.
+%F A262402 a(n) = n^2*(8*n-7)/2 - (n mod 2)/2.
+%O A262402 1,2
+"""
+        mock_response = MagicMock()
+        mock_response.text = response_text
+        mock_response.raise_for_status = MagicMock()
+        mock_client = MagicMock()
+        mock_client.get.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = OEISClient()
+        result = client.get_sequence_by_id("A262402")
+
+        assert result.offset == 1
+        assert result.terms == [0, 18, 76, 200, 412, 738]
+        assert result.name.startswith("a(n) = number of triangles")
+        assert result.formula.startswith("a(n) = n^2")
+        client.close()
+
+    @patch("mcp_oeis.client.httpx.Client")
+    def test_negative_offset(self, mock_client_class: MagicMock) -> None:
+        response_text = """%I A000001
+%S A000001 1,1,1
+%O A000001 -1,1
+"""
+        mock_response = MagicMock()
+        mock_response.text = response_text
+        mock_response.raise_for_status = MagicMock()
+        mock_client = MagicMock()
+        mock_client.get.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = OEISClient()
+        assert client.get_sequence_by_id("A000001").offset == -1
+        client.close()
+
 
 class TestSequenceData:
     def test_sequence_data_creation(self) -> None:
